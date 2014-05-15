@@ -18,6 +18,8 @@
 #include <stdexcept>
 #include <stack>
 #include <vector>
+
+//#include <iostream>
 using namespace std;
 
 const size_t v8_tls_keys = 3;
@@ -40,14 +42,20 @@ static DWORD __stdcall find_thread_id_key(LPVOID arg)
 	v8::Locker locker;
 	v8::Isolate* isolate = v8::Isolate::GetCurrent();
 	assert(isolate != NULL);
-	floor_thread_key = 0;
-	for (pthread_key_t ii = coro_thread_key - 1; ii > (coro_thread_key >= 20 ? coro_thread_key - 20 : 0); --ii) {
+	floor_thread_key = 0x7777;
+	for (pthread_key_t ii = coro_thread_key - 1; ; --ii) {
+//  for (pthread_key_t ii = coro_thread_key - 1; ii > (coro_thread_key >= 40 ? coro_thread_key - 40 : 0); --ii) {
 		if (pthread_getspecific(ii) == isolate) {
 			floor_thread_key = ii;
 			break;
 		}
+        if (ii == 0) break;
 	}
-	assert(floor_thread_key != 0);
+    
+    //cerr << "fibers: floor=" << floor_thread_key << " coro_thread_key=" << coro_thread_key << "\n\n";
+    //exit(1);
+    
+	assert(floor_thread_key != 0x7777);
 	ceil_thread_key = floor_thread_key + v8_tls_keys - 1;
 	return NULL;
 }
